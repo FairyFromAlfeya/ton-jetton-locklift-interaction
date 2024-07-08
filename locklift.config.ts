@@ -25,7 +25,10 @@ const LOCAL_NETWORK_ENDPOINT = process.env.NETWORK_ENDPOINT || "http://localhost
 const VENOM_TESTNET_ENDPOINT = process.env.VENOM_TESTNET_ENDPOINT || "https://jrpc-devnet.venom.foundation/";
 
 const config: LockliftConfig = {
-  compiler: { version: "0.71.0" },
+  compiler: {
+    version: "0.71.0",
+    compilerParams: ["--tvm-version", "ton"],
+  },
   linker: { version: "0.20.6" },
   networks: {
     locklift: {
