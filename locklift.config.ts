@@ -1,4 +1,7 @@
+import "@broxus/locklift-deploy";
+
 import { lockliftChai, LockliftConfig } from "locklift";
+import { Deployments } from "@broxus/locklift-deploy";
 import { FactorySource } from "./build/factorySource";
 import * as dotenv from "dotenv";
 import chai from "chai";
@@ -10,34 +13,20 @@ declare global {
   const locklift: import("locklift").Locklift<FactorySource>;
 }
 
-const LOCAL_NETWORK_ENDPOINT = process.env.NETWORK_ENDPOINT || "http://localhost/graphql";
+declare module "locklift" {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  export interface Locklift {
+    deployments: Deployments<FactorySource>;
+  }
+}
 
+const LOCAL_NETWORK_ENDPOINT = process.env.NETWORK_ENDPOINT || "http://localhost/graphql";
 const VENOM_TESTNET_ENDPOINT = process.env.VENOM_TESTNET_ENDPOINT || "https://jrpc-devnet.venom.foundation/";
 
-// Create your own link on https://dashboard.evercloud.dev/
-
 const config: LockliftConfig = {
-  compiler: {
-    // Specify path to your TON-Solidity-Compiler
-    // path: "/mnt/o/projects/broxus/TON-Solidity-Compiler/build/solc/solc",
-
-    // Or specify version of compiler
-    version: "0.62.0",
-
-    // Specify config for extarnal contracts as in exapmple
-    // externalContracts: {
-    //   "node_modules/broxus-ton-tokens-contracts/build": ['TokenRoot', 'TokenWallet']
-    // }
-  },
-  linker: {
-    // Specify path to your stdlib
-    // lib: "/mnt/o/projects/broxus/TON-Solidity-Compiler/lib/stdlib_sol.tvm",
-    // // Specify path to your Linker
-    // path: "/mnt/o/projects/broxus/TVM-linker/target/release/tvm_linker",
-
-    // Or specify version of linker
-    version: "0.15.48",
-  },
+  compiler: { version: "0.71.0" },
+  linker: { version: "0.20.6" },
   networks: {
     locklift: {
       connection: {
@@ -112,6 +101,25 @@ const config: LockliftConfig = {
         // Use everdev to generate your phrase
         // !!! Never commit it in your repos !!!
         // phrase: "action inject penalty envelope rabbit element slim tornado dinner pizza off blood",
+        amount: 20,
+      },
+    },
+    ton_testnet: {
+      connection: {
+        id: 1002,
+        type: "jrpc",
+        group: "ton",
+        data: {
+          endpoint: process.env.TON_TEST_NETWORK_ENDPOINT!,
+        },
+      },
+      giver: {
+        address: process.env.TON_TEST_GIVER_ADDRESS!,
+        phrase: process.env.TON_TEST_GIVER_PHRASE!,
+        accountId: 0,
+      },
+      keys: {
+        phrase: process.env.TON_TEST_PHRASE!,
         amount: 20,
       },
     },

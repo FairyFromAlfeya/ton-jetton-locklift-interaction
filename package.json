@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "test": "npx locklift test --network local"
+    "test": "npx locklift test --disable-build --network locklift",
+    "build": "npx locklift build",
+    "deploy": "npx locklift deploy --disable-build -n"
   },
   "author": "",
   "license": "ISC",
@@ -11,6 +13,7 @@
     "nekoton-wasm": "npm:nekoton-wasm-locklift@1.20.2"
   },
   "devDependencies": {
+    "@broxus/locklift-deploy": "^1.1.1",
     "@types/chai": "^4.3.16",
     "@types/mocha": "^10.0.7",
     "@types/node": "^20.14.9",

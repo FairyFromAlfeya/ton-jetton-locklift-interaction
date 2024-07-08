@@ -1,34 +1,209 @@
-pragma ever-solidity >= 0.61.2;
+pragma ever-solidity >= 0.71.0;
+
 pragma AbiHeader expire;
 pragma AbiHeader pubkey;
 
+import "./JettonUtils.tsol";
 
-contract Sample {
+import "./interfaces/ITakeWalletAddress.tsol";
+import "./interfaces/ITransferNotification.tsol";
+import "./interfaces/IExcesses.tsol";
+
+contract Sample is
+    ITakeWalletAddress,
+    ITransferNotification,
+    IExcesses
+{
     uint16 static _nonce;
 
-    uint state;
+    TvmCell minterCode;
+    TvmCell walletCode;
 
-    event StateChange(uint _state);
+    address minter;
+    address wallet;
+    address owner;
 
-    constructor(uint _state) public {
-        tvm.accept();
+    using JettonUtils for address;
 
-        setState(_state);
+    event MinterDeployed(address minter);
+
+    modifier reserve() {
+        tvm.rawReserve(1 ever, 0);
+        _;
     }
 
-    function setState(uint _state) public {
-        tvm.accept();
-        state = _state;
-
-        emit StateChange(_state);
+    modifier onlyOwner() {
+        require(msg.sender.value != 0 && msg.sender == owner);
+        _;
     }
 
-    function getDetails()
-        external
-        view
-    returns (
-        uint _state
+    modifier onlyMinter() {
+        require(minter.value != 0 && msg.sender == minter);
+        _;
+    }
+
+    modifier onlyWallet() {
+        require(wallet.value != 0 && msg.sender == wallet);
+        _;
+    }
+
+    constructor(
+        address _initialOwner,
+        TvmCell _initialMinterCode,
+        TvmCell _initialWalletCode
     ) {
-        return state;
+        tvm.accept();
+        tvm.rawReserve(1 ever, 0);
+
+        owner = _initialOwner;
+        minterCode = _initialMinterCode;
+        walletCode = _initialWalletCode;
+
+        _initialOwner.transfer({
+            value: 0,
+            flag: 128,
+            bounce: false
+        });
+    }
+
+    function deployMinter(uint64 _callId) external onlyOwner reserve {
+        TvmCell empty;
+
+        minter = JettonUtils.deployMinter(
+            address(this),
+            empty,
+            walletCode,
+            minterCode,
+            1 ever,
+            1,
+            false
+        );
+
+        minter.walletOf(
+            _callId,
+            address(this),
+            false,
+            0,
+            128,
+            false
+        );
+
+        emit MinterDeployed(minter);
+    }
+
+    function takeWalletAddress(
+        uint64,
+        address _wallet,
+        optional(TvmCell)
+    ) external override functionID(0xd1735400) onlyMinter reserve {
+        wallet = _wallet;
+
+        owner.transfer({
+            value: 0,
+            flag: 128,
+            bounce: false
+        });
+    }
+
+    function transferNotification(
+        uint64,
+        varUint16,
+        address,
+        bool,
+        TvmCell _payload
+    ) external override functionID(0x7362d09c) onlyWallet reserve {
+        address remainingGasTo = abi.decode(_payload, address);
+
+        remainingGasTo.transfer({
+            value: 0,
+            flag: 128,
+            bounce: false
+        });
+    }
+
+    function excesses(uint64) external override functionID(0xd53276db) reserve {
+        owner.transfer({
+            value: 0,
+            flag: 128,
+            bounce: false
+        });
+    }
+
+    function mint(
+        uint64 _callId,
+        address _recipient,
+        uint128 _amount,
+        address _remainingGasTo
+    ) external onlyOwner reserve {
+        TvmCell payload = abi.encode(_remainingGasTo);
+
+        minter.mint(
+            _callId,
+            _recipient,
+            varUint16(_amount),
+            0.1 ever,
+            0.03 ever,
+            payload,
+            _remainingGasTo,
+            0,
+            128,
+            false
+        );
+    }
+
+    function transfer(
+        uint64 _callId,
+        address _recipient,
+        uint128 _amount,
+        address _remainingGasTo
+    ) external onlyOwner reserve {
+        TvmCell payload = abi.encode(_remainingGasTo);
+
+        wallet.transferJettons(
+            _callId,
+            _recipient,
+            varUint16(_amount),
+            0.03 ever,
+            payload,
+            _remainingGasTo,
+            0,
+            128,
+            false
+        );
+    }
+
+    function burn(
+        uint64 _callId,
+        uint128 _amount,
+        address _remainingGasTo
+    ) external onlyOwner reserve {
+        wallet.burn(
+            _callId,
+            varUint16(_amount),
+            _remainingGasTo,
+            0,
+            128,
+            false
+        );
+    }
+
+    function setAdmin(uint64 _callId, address _newAdmin) external onlyOwner reserve {
+        minter.setAdmin(
+            _callId,
+            _newAdmin,
+            0,
+            128,
+            false
+        );
+    }
+
+    function setMeta(uint64 _callId, TvmCell _newMeta) external onlyOwner reserve {
+        minter.setMeta(
+            _callId,
+            _newMeta,
+            0,
+            128,
+            false
+        );
     }
 }
