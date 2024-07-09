@@ -5,7 +5,6 @@ interface ITransferNotification {
         uint64 _callId,
         varUint16 _amount,
         address _tokenSender,
-        bool,
-        TvmCell _payload
+        optional(TvmCell) _payload
     ) external functionID(0x7362d09c);
 }

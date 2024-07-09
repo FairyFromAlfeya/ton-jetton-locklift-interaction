@@ -109,10 +109,9 @@ contract Sample is
         uint64,
         varUint16,
         address,
-        bool,
-        TvmCell _payload
+        optional(TvmCell) _payload
     ) external override functionID(0x7362d09c) onlyWallet reserve {
-        address remainingGasTo = abi.decode(_payload, address);
+        address remainingGasTo = abi.decode(_payload.get(), address);
 
         remainingGasTo.transfer({
             value: 0,
