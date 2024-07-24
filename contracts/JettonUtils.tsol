@@ -8,6 +8,7 @@ library JettonUtils {
 
     // Jetton Minter
     uint32 constant PROVIDE_WALLET_ADDRESS_FUNCTION_ID = 0x2c76b973;
+    uint32 constant PROVIDE_INFO_FUNCTION_ID = 0x13e5c11a;
     uint32 constant MINT_FUNCTION_ID = 0x00000015;
     uint32 constant SET_ADMIN_FUNCTION_ID = 0x00000003;
     uint32 constant SET_META_FUNCTION_ID = 0x00000004;
@@ -19,6 +20,11 @@ library JettonUtils {
 
     function deployMinter(
         address _admin,
+        string _name,
+        string _symbol,
+        uint8 _decimals,
+        uint256 _chainId,
+        uint160 _baseToken,
         TvmCell _metadata,
         TvmCell _walletCode,
         TvmCell _minterCode,
@@ -26,12 +32,21 @@ library JettonUtils {
         uint16 _flag,
         bool _bounce
     ) public returns (address) {
+        TvmBuilder info;
+
+        info.store(_name);
+        info.store(_symbol);
+        info.store(_decimals);
+        info.store(_chainId);
+        info.store(_baseToken);
+
         TvmBuilder data;
 
         data.store(varUint16(0)); // supply
         data.store(_admin);
         data.store(_metadata);
         data.store(_walletCode);
+        data.store(info.toCell());
 
         TvmCell stateInit = tvm.buildStateInit(_minterCode, data.toCell());
         address minter = address(tvm.hash(stateInit));
@@ -61,6 +76,26 @@ library JettonUtils {
         body.store(_callId);
         body.store(_walletOwner);
         body.store(_addWalletOwnerToCallback);
+
+        _minter.transfer({
+            body: body.toCell(),
+            value: _value,
+            flag: _flag,
+            bounce: _bounce
+        });
+    }
+
+    function getInfo(
+        address _minter,
+        uint64 _callId,
+        uint128 _value,
+        uint16 _flag,
+        bool _bounce
+    ) public {
+        TvmBuilder body;
+
+        body.store(PROVIDE_INFO_FUNCTION_ID);
+        body.store(_callId);
 
         _minter.transfer({
             body: body.toCell(),

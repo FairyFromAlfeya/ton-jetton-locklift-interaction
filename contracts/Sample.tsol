@@ -6,11 +6,13 @@ pragma AbiHeader pubkey;
 import "./JettonUtils.tsol";
 
 import "./interfaces/ITakeWalletAddress.tsol";
+import "./interfaces/ITakeInfo.tsol";
 import "./interfaces/ITransferNotification.tsol";
 import "./interfaces/IExcesses.tsol";
 
 contract Sample is
     ITakeWalletAddress,
+    ITakeInfo,
     ITransferNotification,
     IExcesses
 {
@@ -71,10 +73,22 @@ contract Sample is
 
         minter = JettonUtils.deployMinter(
             address(this),
+            "Token",
+            "TKN",
+            9,
+            157,
+            228,
             empty,
             walletCode,
             minterCode,
             1 ever,
+            1,
+            false
+        );
+
+        minter.getInfo(
+            _callId,
+            0.1 ever,
             1,
             false
         );
@@ -98,6 +112,21 @@ contract Sample is
     ) external override functionID(0xd1735400) onlyMinter reserve {
         wallet = _wallet;
 
+        owner.transfer({
+            value: 0,
+            flag: 128,
+            bounce: false
+        });
+    }
+
+    function takeInfo(
+        uint64,
+        uint8,
+        uint256,
+        uint160,
+        string,
+        string
+    ) external override functionID(0x93e5c11a) onlyMinter reserve {
         owner.transfer({
             value: 0,
             flag: 128,

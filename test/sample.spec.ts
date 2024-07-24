@@ -27,7 +27,17 @@ describe("Test Sample contract", () => {
         .count(1)
         .and.to.call("takeWalletAddress")
         .count(1)
-        .withNamedArgs({ value0: "555" });
+        .withNamedArgs({ value0: "555" })
+        .and.to.call("takeInfo")
+        .count(1)
+        .withNamedArgs({
+          value0: "555",
+          value1: "9",
+          value2: "157",
+          value3: "228",
+          value4: "Token",
+          value5: "TKN",
+        });
     });
 
     it("mint()", async () => {
