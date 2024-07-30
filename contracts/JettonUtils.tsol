@@ -17,21 +17,15 @@ library JettonUtils {
     uint32 constant TAKE_WALLET_ADDRESS_FUNCTION_ID = 0xd1735400;
     uint32 constant TRANSFER_NOTIFICATION_FUNCTION_ID = 0x7362d09c;
     uint32 constant EXCESSES_FUNCTION_ID = 0xd53276db;
+    uint32 constant ON_ACCEPT_TOKENS_BURN_FUNCTION_ID = 0x68088d9b;
 
-    function deployMinter(
-        address _admin,
+    function buildMinterMetadata(
         string _name,
         string _symbol,
         uint8 _decimals,
         uint256 _chainId,
-        uint160 _baseToken,
-        TvmCell _metadata,
-        TvmCell _walletCode,
-        TvmCell _minterCode,
-        uint128 _value,
-        uint16 _flag,
-        bool _bounce
-    ) public returns (address) {
+        uint160 _baseToken
+    ) public returns (TvmCell) {
         TvmBuilder info;
 
         info.store(_name);
@@ -40,15 +34,60 @@ library JettonUtils {
         info.store(_chainId);
         info.store(_baseToken);
 
+        return info.toCell();
+    }
+
+    function buildMinterStateInit(
+        address _admin,
+        string _name,
+        string _symbol,
+        uint8 _decimals,
+        uint256 _chainId,
+        uint160 _baseToken,
+        TvmCell _walletCode,
+        TvmCell _minterCode
+    ) public returns (TvmCell) {
         TvmBuilder data;
 
-        data.store(varUint16(0)); // supply
+        data.storeTons(varUint16(0)); // supply
         data.store(_admin);
-        data.store(_metadata);
+        data.store(
+            buildMinterMetadata(
+                _name,
+                _symbol,
+                _decimals,
+                _chainId,
+                _baseToken
+            )
+        );
         data.store(_walletCode);
-        data.store(info.toCell());
 
-        TvmCell stateInit = tvm.buildStateInit(_minterCode, data.toCell());
+        return tvm.buildStateInit(_minterCode, data.toCell());
+    }
+
+    function deployMinter(
+        address _admin,
+        string _name,
+        string _symbol,
+        uint8 _decimals,
+        uint256 _chainId,
+        uint160 _baseToken,
+        TvmCell _walletCode,
+        TvmCell _minterCode,
+        uint128 _value,
+        uint16 _flag,
+        bool _bounce
+    ) public returns (address) {
+        TvmCell stateInit = buildMinterStateInit(
+            _admin,
+            _name,
+            _symbol,
+            _decimals,
+            _chainId,
+            _baseToken,
+            _walletCode,
+            _minterCode
+        );
         address minter = address(tvm.hash(stateInit));
 
         minter.transfer({
@@ -181,6 +220,7 @@ library JettonUtils {
         uint64 _callId,
         varUint16 _amount,
         address _remainingGasTo,
+        optional(TvmCell) _payload,
         uint128 _value,
         uint16 _flag,
         bool _bounce
@@ -191,6 +231,7 @@ library JettonUtils {
         body.store(_callId);
         body.store(_amount);
         body.store(_remainingGasTo);
+        body.store(_payload);
 
         _wallet.transfer({
             body: body.toCell(),

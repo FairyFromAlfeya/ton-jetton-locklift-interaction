@@ -76,10 +76,15 @@ describe("Test Sample contract", () => {
         .withNamedArgs({ value0: "321" });
     });
 
-    it("burn()", async () => {
+    it("burn() without callback", async () => {
       const { traceTree } = await locklift.tracing.trace(
         sample.methods
-          .burn({ _callId: 123, _amount: toNano(100), _remainingGasTo: sample.address })
+          .burn({
+            _callId: 123,
+            _amount: toNano(100),
+            _remainingGasTo: sample.address,
+            _payload: null,
+          })
           .send({ from: owner, amount: toNano(0.05), bounce: true }),
       );
 
@@ -89,6 +94,38 @@ describe("Test Sample contract", () => {
         .and.to.call("excesses")
         .count(1)
         .withNamedArgs({ value0: "123" });
+    });
+
+    it("burn() with callback", async () => {
+      const payload = await locklift.provider.packIntoCell({
+        abiVersion: "2.3",
+        structure: [{ name: "remainingGasTo", type: "address" }] as const,
+        data: { remainingGasTo: owner },
+      });
+
+      const { traceTree } = await locklift.tracing.trace(
+        sample.methods
+          .burn({
+            _callId: 888,
+            _amount: toNano(100),
+            _remainingGasTo: sample.address,
+            _payload: payload.boc,
+          })
+          .send({ from: owner, amount: toNano(0.05), bounce: true }),
+      );
+
+      return expect(traceTree)
+        .to.call("burn")
+        .count(1)
+        .withNamedArgs({ _callId: "888" })
+        .and.to.call("onAcceptTokensBurn")
+        .count(1)
+        .withNamedArgs({
+          value0: toNano(100),
+          value1: sample.address,
+          value3: sample.address,
+          _payload: payload.boc,
+        });
     });
 
     it("setMeta()", async () => {

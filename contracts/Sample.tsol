@@ -9,12 +9,14 @@ import "./interfaces/ITakeWalletAddress.tsol";
 import "./interfaces/ITakeInfo.tsol";
 import "./interfaces/ITransferNotification.tsol";
 import "./interfaces/IExcesses.tsol";
+import "./interfaces/IOnAcceptTokensBurn.tsol";
 
 contract Sample is
     ITakeWalletAddress,
     ITakeInfo,
     ITransferNotification,
-    IExcesses
+    IExcesses,
+    IOnAcceptTokensBurn
 {
     uint16 static _nonce;
 
@@ -69,8 +71,6 @@ contract Sample is
     }
 
     function deployMinter(uint64 _callId) external onlyOwner reserve {
-        TvmCell empty;
-
         minter = JettonUtils.deployMinter(
             address(this),
             "Token",
@@ -78,7 +78,6 @@ contract Sample is
             9,
             157,
             228,
-            empty,
             walletCode,
             minterCode,
             1 ever,
@@ -149,6 +148,22 @@ contract Sample is
         });
     }
 
+    function onAcceptTokensBurn(
+        uint128,
+        address,
+        address,
+        address,
+        TvmCell _payload
+    ) external override onlyMinter reserve {
+        address remainingGasTo = abi.decode(_payload, address);
+
+        remainingGasTo.transfer({
+            value: 0,
+            flag: 128,
+            bounce: false
+        });
+    }
+
     function excesses(uint64) external override functionID(0xd53276db) reserve {
         owner.transfer({
             value: 0,
@@ -203,12 +218,14 @@ contract Sample is
     function burn(
         uint64 _callId,
         uint128 _amount,
-        address _remainingGasTo
+        address _remainingGasTo,
+        optional(TvmCell) _payload
     ) external onlyOwner reserve {
         wallet.burn(
             _callId,
             varUint16(_amount),
             _remainingGasTo,
+            _payload,
             0,
             128,
             false
