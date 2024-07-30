@@ -5,7 +5,9 @@
   "scripts": {
     "test": "npx locklift test --disable-build --network locklift",
     "build": "npx locklift build",
-    "deploy": "npx locklift deploy --disable-build -n"
+    "deploy": "npx locklift deploy --disable-build -n",
+    "deploy-minter": "npx locklift run -s scripts/0-deploy-jetton.ts --disable-build -n",
+    "change-admin": "npx locklift run -s scripts/1-change-admin.ts --disable-build -n"
   },
   "author": "",
   "license": "ISC",
