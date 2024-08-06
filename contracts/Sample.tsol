@@ -176,6 +176,7 @@ contract Sample is
         uint64 _callId,
         address _recipient,
         uint128 _amount,
+        varUint16 _callbackValue,
         address _remainingGasTo
     ) external onlyOwner reserve {
         TvmCell payload = abi.encode(_remainingGasTo);
@@ -184,8 +185,8 @@ contract Sample is
             _callId,
             _recipient,
             varUint16(_amount),
-            0.1 ever,
-            0.03 ever,
+            0,
+            _callbackValue,
             payload,
             _remainingGasTo,
             0,
@@ -198,6 +199,7 @@ contract Sample is
         uint64 _callId,
         address _recipient,
         uint128 _amount,
+        varUint16 _callbackValue,
         address _remainingGasTo
     ) external onlyOwner reserve {
         TvmCell payload = abi.encode(_remainingGasTo);
@@ -206,7 +208,7 @@ contract Sample is
             _callId,
             _recipient,
             varUint16(_amount),
-            0.03 ever,
+            _callbackValue,
             payload,
             _remainingGasTo,
             0,

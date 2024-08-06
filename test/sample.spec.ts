@@ -40,10 +40,38 @@ describe("Test Sample contract", () => {
         });
     });
 
-    it("mint()", async () => {
+    it("mint() with gas refund", async () => {
       const { traceTree } = await locklift.tracing.trace(
         sample.methods
-          .mint({ _callId: 987, _recipient: sample.address, _amount: toNano(1000), _remainingGasTo: sample.address })
+          .mint({
+            _callId: 987,
+            _recipient: sample.address,
+            _amount: toNano(1000),
+            _callbackValue: 0,
+            _remainingGasTo: sample.address,
+          })
+          .send({ from: owner, amount: toNano(0.15), bounce: true }),
+      );
+
+      return expect(traceTree)
+        .to.call("mint")
+        .count(1)
+        .and.to.call("excesses")
+        .count(1)
+        .withNamedArgs({ value0: "987" })
+        .and.not.to.call("transferNotification");
+    });
+
+    it("mint() with callback", async () => {
+      const { traceTree } = await locklift.tracing.trace(
+        sample.methods
+          .mint({
+            _callId: 987,
+            _recipient: sample.address,
+            _amount: toNano(1000),
+            _callbackValue: 1,
+            _remainingGasTo: sample.address,
+          })
           .send({ from: owner, amount: toNano(0.15), bounce: true }),
       );
 
@@ -53,15 +81,41 @@ describe("Test Sample contract", () => {
         .and.to.call("transferNotification")
         .count(1)
         .withNamedArgs({ value0: "987" })
-        .and.to.call("excesses")
-        .count(1)
-        .withNamedArgs({ value0: "987" });
+        .and.not.to.call("excesses");
     });
 
-    it("transfer()", async () => {
+    it("transfer() with gas refund", async () => {
       const { traceTree } = await locklift.tracing.trace(
         sample.methods
-          .transfer({ _callId: 321, _recipient: sample.address, _amount: toNano(500), _remainingGasTo: sample.address })
+          .transfer({
+            _callId: 321,
+            _recipient: sample.address,
+            _amount: toNano(500),
+            _callbackValue: 0,
+            _remainingGasTo: sample.address,
+          })
+          .send({ from: owner, amount: toNano(0.1), bounce: true }),
+      );
+
+      return expect(traceTree)
+        .to.call("transfer")
+        .count(1)
+        .and.to.call("excesses")
+        .count(1)
+        .withNamedArgs({ value0: "321" })
+        .and.not.to.call("transferNotification");
+    });
+
+    it("transfer() with callback", async () => {
+      const { traceTree } = await locklift.tracing.trace(
+        sample.methods
+          .transfer({
+            _callId: 321,
+            _recipient: sample.address,
+            _amount: toNano(500),
+            _callbackValue: 1,
+            _remainingGasTo: sample.address,
+          })
           .send({ from: owner, amount: toNano(0.1), bounce: true }),
       );
 
@@ -71,9 +125,7 @@ describe("Test Sample contract", () => {
         .and.to.call("transferNotification")
         .count(1)
         .withNamedArgs({ value0: "321" })
-        .and.to.call("excesses")
-        .count(1)
-        .withNamedArgs({ value0: "321" });
+        .and.not.to.call("excesses");
     });
 
     it("burn() without callback", async () => {
