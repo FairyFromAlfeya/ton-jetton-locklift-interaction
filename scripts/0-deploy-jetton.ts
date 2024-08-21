@@ -1,21 +1,57 @@
 import { Address, toNano } from "locklift";
 
 import MinterCode from "../jetton-contracts/jetton-minter.compiled.json";
+import WalletCode from "../jetton-contracts/jetton-wallet.compiled.json";
 
-const INIT_DATA =
-  "te6ccsECFQEAA5MAAAAAJgAzADgASABNAFIAVwCbAQ0BEgGSAdICDAKIAtkC3gLpA00DhgOMAkMIAUFMDRDbYP9owIUGXUNsv+xG7/HxJUz6G83vawwtpvB3EgEBFP8A9KQT9LzyyAsCAgFiBAMAG6D2BdqJofQB9IH0gahhAgLMDwUCAVgJBgIBIAgHAIMgCDXIe1E0PoA+kD6QNQwBNMfghAXjUUZUiC6ghB73ZfeE7oSsfLixdM/MfoAMBOgUCPIUAT6AljPFgHPFszJ7VSAA3ztRND6APpA+kDUMAfTP/oA+kD0BDBRYqFSWscF8uLBKML/8uLCBoIJMS0AoBe88uLDghB73ZfeyMsfyz9QBfoCIc8WUAPPFvQAyXGAGMjLBSTPFnD6AstqzMmAQPsAQBPIUAT6AljPFgHPFszJ7VSACASANCgL3O1E0PoA+kD6QNQwCNM/+gBRUaAF+kD6QFNbxwVUc21wVCATVBQDyFAE+gJYzxYBzxbMySLIywES9AD0AMsAyfkAcHTIywLKB8v/ydBQDccFHLHy4sMK+gBRqKGCCJiWgGa2CKGCCJiWgKAYoSeXEEkQODdfBOMNJdcLAYAwLAHzDACPCALCOIYIQ1TJ223CAEMjLBVAIzxZQBPoCFstqEssfEss/yXL7AJM1bCHiA8hQBPoCWM8WAc8WzMntVABwUnmgGKGCEHNi0JzIyx9SMMs/WPoCUAfPFlAHzxbJcYAQyMsFJM8WUAb6AhXLahTMyXH7ABAkECMB8QD0z/6APpAIfAB7UTQ+gD6QPpA1DBRNqFSKscF8uLBKML/8uLCVDRCcFQgE1QUA8hQBPoCWM8WAc8WzMkiyMsBEvQA9ADLAMkg+QBwdMjLAsoHy//J0AT6QPQEMfoAINdJwgDy4sR3gBjIywVQCM8WcPoCF8trE8yAOAJ6CEBeNRRnIyx8Zyz9QB/oCIs8WUAbPFiX6AlADzxbJUAXMI5FykXHiUAioE6CCCcnDgKAUvPLixQTJgED7ABAjyFAE+gJYzxYBzxbMye1UAgHUERAAET6RDBwuvLhTYADDCDHAJJfBOAB0NMDAXGwlRNfA/AP4PpA+kAx+gAxcdch+gAx+gAwc6m0AALTH4IQD4p+pVIgupUxNFnwDOCCEBeNRRlSILqWMUREA/AN4DWCEFlfB7y6k1nwDuBfBIQP8vCACagkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAnQAAAAAAAAAAAAAAAAAAAAAAAADkFBMACFVTRFQACmpVU0RU95a2wA==";
+const MINTER_CONTENT_STRUCTURE = [
+  { name: "name", type: "string" },
+  { name: "symbol", type: "string" },
+  { name: "decimals", type: "uint8" },
+  { name: "chainId", type: "uint256" },
+  { name: "baseToken", type: "uint160" },
+] as const;
+const MINTER_STATE_STRUCTURE = [
+  { name: "supply", type: "gram" },
+  { name: "admin", type: "address" },
+  { name: "content", type: "cell" },
+  { name: "walletCode", type: "cell" },
+] as const;
 
 const MINTER_CODE = Buffer.from(MinterCode.hex, "hex").toString("base64");
+const WALLET_CODE = Buffer.from(WalletCode.hex, "hex").toString("base64");
 
 const main = async (): Promise<void> => {
-  const { tvc } = await locklift.provider.mergeTvc({ data: INIT_DATA, code: MINTER_CODE });
+  const deployer = new Address(locklift.context.network.config.giver.address);
 
-  const hash = await locklift.provider.getBocHash(tvc);
+  const content = await locklift.provider.packIntoCell({
+    abiVersion: "2.1",
+    structure: MINTER_CONTENT_STRUCTURE,
+    data: {
+      name: "ZALUPA",
+      symbol: "ZLP",
+      decimals: 18,
+      chainId: 228,
+      baseToken: 1337,
+    },
+  });
+  const state = await locklift.provider.packIntoCell({
+    abiVersion: "2.1",
+    structure: MINTER_STATE_STRUCTURE,
+    data: {
+      supply: 0,
+      admin: deployer,
+      content: content.boc,
+      walletCode: WALLET_CODE,
+    },
+  });
+
+  const { tvc, hash } = await locklift.provider.mergeTvc({ data: state.boc, code: MINTER_CODE });
+
   const jetton = new Address(`0:${hash}`);
 
   await locklift.transactions.waitFinalized(
     locklift.provider.sendMessage({
-      sender: new Address(locklift.context.network.config.giver.address),
+      sender: deployer,
       recipient: jetton,
       bounce: false,
       amount: toNano("0.1"),
