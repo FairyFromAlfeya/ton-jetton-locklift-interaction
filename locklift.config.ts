@@ -3,11 +3,13 @@ import "@broxus/locklift-deploy";
 import { lockliftChai, LockliftConfig } from "locklift";
 import { Deployments } from "@broxus/locklift-deploy";
 import { FactorySource } from "./build/factorySource";
+import { BigNumber } from "bignumber.js";
 import * as dotenv from "dotenv";
 import chai from "chai";
 
 dotenv.config();
 chai.use(lockliftChai);
+BigNumber.config({ EXPONENTIAL_AT: 1e9 });
 
 declare global {
   const locklift: import("locklift").Locklift<FactorySource>;
