@@ -22,6 +22,7 @@ contract Sample is
 
     TvmCell minterCode;
     TvmCell walletCode;
+    TvmCell platformCode;
 
     address minter;
     address wallet;
@@ -54,7 +55,8 @@ contract Sample is
     constructor(
         address _initialOwner,
         TvmCell _initialMinterCode,
-        TvmCell _initialWalletCode
+        TvmCell _initialWalletCode,
+        TvmCell _initialPlatformCode
     ) {
         tvm.accept();
         tvm.rawReserve(1 ever, 0);
@@ -62,6 +64,7 @@ contract Sample is
         owner = _initialOwner;
         minterCode = _initialMinterCode;
         walletCode = _initialWalletCode;
+        platformCode = _initialPlatformCode;
 
         _initialOwner.transfer({
             value: 0,
@@ -80,6 +83,7 @@ contract Sample is
             228,
             walletCode,
             minterCode,
+            platformCode,
             1 ever,
             1,
             false
@@ -220,14 +224,16 @@ contract Sample is
     function burn(
         uint64 _callId,
         uint128 _amount,
-        address _remainingGasTo,
-        optional(TvmCell) _payload
+        address _callbackTo,
+        optional(TvmCell) _payload,
+        optional(address) _remainingGasTo
     ) external onlyOwner reserve {
         wallet.burn(
             _callId,
             varUint16(_amount),
-            _remainingGasTo,
+            _callbackTo,
             _payload,
+            _remainingGasTo,
             0,
             128,
             false
@@ -248,6 +254,56 @@ contract Sample is
         minter.setMeta(
             _callId,
             _newMeta,
+            0,
+            128,
+            false
+        );
+    }
+
+    function setWalletCode(uint64 _callId, TvmCell _newWalletCode) external onlyOwner reserve {
+        minter.setWalletCode(
+            _callId,
+            _newWalletCode,
+            0,
+            128,
+            false
+        );
+    }
+
+    function upgradeMinter(uint64 _callId, TvmCell _newMinterCode) external onlyOwner reserve {
+        minter.upgradeMinter(
+            _callId,
+            _newMinterCode,
+            0,
+            128,
+            false
+        );
+    }
+
+    function upgradeWallet(uint64 _callId, address _remainingGasTo) external onlyOwner reserve {
+        wallet.upgradeWallet(
+            _callId,
+            _remainingGasTo,
+            0,
+            128,
+            false
+        );
+    }
+
+    function deployWallet(uint64 _callId, address _walletOwner) external onlyOwner reserve {
+        minter.deployWallet(
+            _callId,
+            _walletOwner,
+            0,
+            128,
+            false
+        );
+    }
+
+    function drain(address _minterOrWallet, uint64 _callId, address _remainingGasTo) external view onlyOwner reserve {
+        _minterOrWallet.drain(
+            _callId,
+            _remainingGasTo,
             0,
             128,
             false
