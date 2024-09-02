@@ -8,7 +8,7 @@ const MINTER_CONTENT_STRUCTURE = [
   { name: "symbol", type: "string" },
   { name: "decimals", type: "uint8" },
   { name: "chainId", type: "uint256" },
-  { name: "baseToken", type: "uint160" },
+  { name: "baseToken", type: "uint256" },
 ] as const;
 const MINTER_STATE_STRUCTURE = [
   { name: "supply", type: "gram" },

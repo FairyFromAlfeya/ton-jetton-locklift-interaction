@@ -29,7 +29,7 @@ library JettonUtils {
         string _symbol,
         uint8 _decimals,
         uint256 _chainId,
-        uint160 _baseToken
+        uint256 _baseToken
     ) public returns (TvmCell) {
         TvmBuilder info;
 
@@ -48,7 +48,7 @@ library JettonUtils {
         string _symbol,
         uint8 _decimals,
         uint256 _chainId,
-        uint160 _baseToken,
+        uint256 _baseToken,
         TvmCell _walletCode,
         TvmCell _minterCode,
         TvmCell _platformCode
@@ -79,7 +79,7 @@ library JettonUtils {
         string _symbol,
         uint8 _decimals,
         uint256 _chainId,
-        uint160 _baseToken,
+        uint256 _baseToken,
         TvmCell _walletCode,
         TvmCell _minterCode,
         TvmCell _platformCode,

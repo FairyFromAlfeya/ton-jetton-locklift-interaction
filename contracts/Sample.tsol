@@ -126,7 +126,7 @@ contract Sample is
         uint64,
         uint8,
         uint256,
-        uint160,
+        uint256,
         string,
         string
     ) external override functionID(0x93e5c11a) onlyMinter reserve {
