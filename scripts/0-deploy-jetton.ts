@@ -2,6 +2,7 @@ import { Address, toNano } from "locklift";
 
 import MinterCode from "../jetton-contracts/jetton-minter.compiled.json";
 import WalletCode from "../jetton-contracts/jetton-wallet.compiled.json";
+import PlatformCode from "../jetton-contracts/jetton-platform.compiled.json";
 
 const MINTER_CONTENT_STRUCTURE = [
   { name: "name", type: "string" },
@@ -15,10 +16,13 @@ const MINTER_STATE_STRUCTURE = [
   { name: "admin", type: "address" },
   { name: "content", type: "cell" },
   { name: "walletCode", type: "cell" },
+  { name: "platformCode", type: "cell" },
+  { name: "walletVersion", type: "uint32" },
 ] as const;
 
 const MINTER_CODE = Buffer.from(MinterCode.hex, "hex").toString("base64");
 const WALLET_CODE = Buffer.from(WalletCode.hex, "hex").toString("base64");
+const PLATFORM_CODE = Buffer.from(PlatformCode.hex, "hex").toString("base64");
 
 const main = async (): Promise<void> => {
   const deployer = new Address(locklift.context.network.config.giver.address);
@@ -27,8 +31,8 @@ const main = async (): Promise<void> => {
     abiVersion: "2.1",
     structure: MINTER_CONTENT_STRUCTURE,
     data: {
-      name: "ZALUPA",
-      symbol: "ZLP",
+      name: "TDD",
+      symbol: "TDD",
       decimals: 18,
       chainId: 228,
       baseToken: 1337,
@@ -42,6 +46,8 @@ const main = async (): Promise<void> => {
       admin: deployer,
       content: content.boc,
       walletCode: WALLET_CODE,
+      platformCode: PLATFORM_CODE,
+      walletVersion: 1,
     },
   });
 

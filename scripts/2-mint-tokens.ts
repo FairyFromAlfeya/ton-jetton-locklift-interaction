@@ -1,7 +1,7 @@
 import { BigNumber } from "bignumber.js";
 import { Address, toNano } from "locklift";
 
-const MINTER = new Address("0:f6b8e26e3723ce02ab73b86cf01bc4e1e6fffe75a10561266ef371dfd81ef255");
+const MINTER = new Address("0:540f6f14f9ac0a99f315c38af31288d916aff75e11838e33df469ab0ad683c5b");
 
 const MINTER_MINT_STRUCTURE = [
   { name: "functionId", type: "uint32" },
